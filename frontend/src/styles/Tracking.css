@@ -1,0 +1,141 @@
+.tracking-container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.tracking-header {
+  background: white;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.tracking-header h1 {
+  margin: 0;
+  flex: 1;
+}
+
+.bus-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: #666;
+}
+
+.tracking-content {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 20px;
+  padding: 20px;
+  height: calc(100vh - 100px);
+}
+
+.map-container {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bus-list {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  overflow-y: auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bus-list h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.no-buses {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.bus-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bus-item {
+  padding: 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.bus-item:hover {
+  border-color: #007bff;
+  background-color: #f8f9fa;
+}
+
+.bus-item.active {
+  border-color: #007bff;
+  background-color: #e7f3ff;
+}
+
+.bus-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.bus-item-header h4 {
+  margin: 0;
+  color: #333;
+}
+
+.bus-item p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.last-update {
+  font-size: 12px !important;
+  color: #999 !important;
+  margin-top: 8px !important;
+}
+
+.info-window {
+  padding: 10px;
+  max-width: 250px;
+}
+
+.info-window h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.info-window p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+@media (max-width: 1024px) {
+  .tracking-content {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .map-container {
+    height: 400px;
+  }
+
+  .bus-list {
+    max-height: 400px;
+  }
+}
