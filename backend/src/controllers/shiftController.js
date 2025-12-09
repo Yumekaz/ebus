@@ -9,7 +9,7 @@ function formatResponse(success, message, data = null) {
 const getAllShifts = async (req, res) => {
     try {
         const { date, status, bus_id, driver_id } = req.query;
-        
+
         let query = `
             SELECT s.*, b.bus_number, d.full_name as driver_name, r.route_name
             FROM shifts s
@@ -19,7 +19,7 @@ const getAllShifts = async (req, res) => {
             WHERE 1=1
         `;
         const params = [];
-        
+
         if (date) {
             query += ' AND s.shift_date = ?';
             params.push(date);
@@ -36,11 +36,11 @@ const getAllShifts = async (req, res) => {
             query += ' AND s.driver_id = ?';
             params.push(driver_id);
         }
-        
+
         query += ' ORDER BY s.shift_date DESC, s.start_time DESC';
-        
-        const results = await shiftDb.query(query, params);
-        
+
+        const [results] = await shiftDb.query(query, params);
+
         res.json(formatResponse(true, 'Shifts retrieved', results));
     } catch (error) {
         console.error('Get shifts error:', error);
@@ -53,12 +53,12 @@ const getAllShifts = async (req, res) => {
 const createShift = async (req, res) => {
     try {
         const { bus_id, driver_id, route_id, shift_type, start_time, end_time, shift_date } = req.body;
-        
+
         // Check for conflicts
-        const conflicts = await shiftDb.query(
+        const [conflicts] = await shiftDb.query(
             `SELECT * FROM shifts 
              WHERE shift_date = ? 
-             AND status != 'cancelled'
+             AND status NOT IN ('cancelled', 'completed')
              AND (bus_id = ? OR driver_id = ?)
              AND (
                  (start_time <= ? AND end_time >= ?) OR
@@ -67,17 +67,19 @@ const createShift = async (req, res) => {
              )`,
             [shift_date, bus_id, driver_id, start_time, start_time, end_time, end_time, start_time, end_time]
         );
-        
+
         if (conflicts.length > 0) {
             return res.status(400).json(formatResponse(false, 'Bus or driver already assigned at this time'));
         }
-        
-        const result = await shiftDb.query(
-            `INSERT INTO shifts (bus_id, driver_id, route_id, shift_type, start_time, end_time, shift_date)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [bus_id, driver_id, route_id, shift_type, start_time, end_time, shift_date]
+
+        const shift_code = `SH-${Date.now()}`;
+
+        const [result] = await shiftDb.query(
+            `INSERT INTO shifts (shift_code, bus_id, driver_id, route_id, shift_type, start_time, end_time, shift_date)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [shift_code, bus_id, driver_id, route_id, shift_type, start_time, end_time, shift_date]
         );
-        
+
         res.status(201).json(formatResponse(true, 'Shift created successfully', { id: result.insertId }));
     } catch (error) {
         console.error('Create shift error:', error);
@@ -89,23 +91,23 @@ const updateShiftStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
-        
+
         const updateFields = { status };
-        
+
         if (status === 'active') {
             updateFields.actual_start_time = new Date();
         } else if (status === 'completed') {
             updateFields.actual_end_time = new Date();
         }
-        
+
         await shiftDb.query(
             `UPDATE shifts SET ${Object.keys(updateFields).map(k => `${k} = ?`).join(', ')} WHERE id = ?`,
             [...Object.values(updateFields), id]
         );
-        
+
         // Update Firebase bus status
         if (status === 'active' || status === 'completed') {
-            const shift = await shiftDb.query(
+            const [shift] = await shiftDb.query(
                 `SELECT s.*, b.bus_number, d.full_name as driver_name, r.route_name
                  FROM shifts s
                  JOIN buses b ON s.bus_id = b.id
@@ -114,7 +116,7 @@ const updateShiftStatus = async (req, res) => {
                  WHERE s.id = ?`,
                 [id]
             );
-            
+
             if (shift.length > 0) {
                 await firebase.updateBusStatus(shift[0].bus_id, status, {
                     shiftId: id,
@@ -124,7 +126,7 @@ const updateShiftStatus = async (req, res) => {
                 });
             }
         }
-        
+
         res.json(formatResponse(true, 'Shift status updated'));
     } catch (error) {
         console.error('Update shift status error:', error);

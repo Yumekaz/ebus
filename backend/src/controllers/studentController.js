@@ -32,7 +32,7 @@ const getAllStudents = async (req, res) => {
         console.log('Query:', query);
         console.log('Params:', params);
 
-        const results = await studentDb.query(query, params);
+        const [results] = await studentDb.query(query, params);
 
         res.json({ success: true, message: 'Students retrieved', data: results });
     } catch (error) {
@@ -44,18 +44,23 @@ const getAllStudents = async (req, res) => {
 
 const createStudent = async (req, res) => {
     try {
-        const { student_id, full_name, email, phone, parent_phone, department, year, address, pickup_stop_id, drop_stop_id } = req.body;
-        
-        const result = await studentDb.query(
-            `INSERT INTO students (student_id, full_name, email, phone, parent_phone, department, year, address, pickup_stop_id, drop_stop_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [student_id, full_name, email, phone, parent_phone, department, year, address, pickup_stop_id, drop_stop_id]
+        const { student_id, full_name, email, phone, parent_phone, department, year, address, pickup_stop_id, drop_stop_id, password } = req.body;
+
+        // Hash password if provided, otherwise use default
+        const { hashPassword } = require('../utils/helpers');
+        const passwordToHash = password || 'student123'; // Default password
+        const password_hash = await hashPassword(passwordToHash);
+
+        const [result] = await studentDb.query(
+            `INSERT INTO students (student_id, full_name, email, phone, parent_phone, department, year, address, pickup_stop_id, drop_stop_id, password_hash)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [student_id, full_name, email, phone, parent_phone, department, year, address, pickup_stop_id, drop_stop_id, password_hash]
         );
-        
+
         res.status(201).json(formatResponse(true, 'Student created successfully', { id: result.insertId }));
     } catch (error) {
         console.error('Create student error:', error);
-        if (error.code === 'ER_DUP_ENTRY') {
+        if (error.code === 'ER_DUP_ENTRY' || error.message.includes('UNIQUE constraint')) {
             res.status(400).json(formatResponse(false, 'Student ID or email already exists'));
         } else {
             res.status(500).json(formatResponse(false, 'Failed to create student'));

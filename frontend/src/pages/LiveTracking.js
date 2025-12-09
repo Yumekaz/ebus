@@ -20,9 +20,16 @@ const LiveTracking = () => {
 
   useEffect(() => {
     loadActiveBuses();
+
+    // POLLING: Refresh bus locations every 2 seconds for real-time effect
+    const pollInterval = setInterval(() => {
+      loadActiveBuses(true); // silent refresh
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
   }, []);
 
-  const loadActiveBuses = async () => {
+  const loadActiveBuses = async (silent = false) => {
     try {
       const response = await dashboardService.getActiveBuses();
       const activeBuses = response.data.data || [];
@@ -45,28 +52,11 @@ const LiveTracking = () => {
         });
       }
 
-      setLoading(false);
-
-      activeBuses.forEach(bus => {
-        subscribeToBusLocation(bus.id, (locationData) => {
-          setBuses(prevBuses =>
-            prevBuses.map(b =>
-              b.id === bus.id
-                ? {
-                  ...b,
-                  latitude: locationData.latitude,
-                  longitude: locationData.longitude,
-                  lastUpdate: new Date().toISOString()
-                }
-                : b
-            )
-          );
-        });
-      });
+      if (!silent) setLoading(false);
 
     } catch (error) {
       console.error('Error loading active buses:', error);
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 

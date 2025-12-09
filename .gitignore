@@ -62,3 +62,25 @@ coverage/
 
 # Firebase credentials
 e-bus-system-*-firebase-adminsdk-*.json
+
+# Debug and crash files
+crash.log
+crash.txt
+*.crash
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# ESLint
+.eslintcache
+
+# Gemini/Agent artifacts
+.gemini/
+.agent/
+
+# Package lock files (uncomment if you don't want to track these)
+# package-lock.json
+# */package-lock.json

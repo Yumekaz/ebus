@@ -39,8 +39,8 @@ app.use(morgan('combined'));
 
 // Health Check
 app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'OK', 
+    res.json({
+        status: 'OK',
         timestamp: new Date().toISOString(),
         service: 'E-Bus Management System API'
     });
@@ -58,6 +58,8 @@ app.use('/api/gps', gpsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/simulation', require('./src/routes/simulationRoutes.js'));
+app.use('/api/bookings', require('./src/routes/seatBookingRoutes.js'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -85,7 +87,7 @@ cron.schedule('0 2 * * *', async () => {
         const db = await dbConfig.getConnection();
         const deleteBefore = new Date();
         deleteBefore.setDate(deleteBefore.getDate() - 7); // Keep 7 days
-        
+
         await db.query(
             'DELETE FROM gps_logs WHERE timestamp < ?',
             [deleteBefore]
@@ -103,7 +105,7 @@ cron.schedule('*/5 * * * *', async () => {
         const db = await dbConfig.getConnection();
         const now = new Date();
         const currentTime = now.toTimeString().split(' ')[0];
-        
+
         // Auto-start shifts
         await db.query(`
             UPDATE shifts 
@@ -113,7 +115,7 @@ cron.schedule('*/5 * * * *', async () => {
             AND start_time <= ?
             AND ADDTIME(start_time, '00:15:00') >= ?
         `, [currentTime, currentTime]);
-        
+
         // Auto-complete shifts
         await db.query(`
             UPDATE shifts 
@@ -122,7 +124,7 @@ cron.schedule('*/5 * * * *', async () => {
             AND status = 'active' 
             AND end_time < ?
         `, [currentTime]);
-        
+
         await db.release();
     } catch (error) {
         console.error('Shift status update error:', error);

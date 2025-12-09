@@ -25,6 +25,17 @@ const ShiftManagement = () => {
     }
   };
 
+  const handleSimulate = async (shiftId) => {
+    try {
+      const api = require('../services/api').default;
+      await api.post('/simulation/start', { shift_id: shiftId, speed_multiplier: 2 }); // 2x speed (Medium)
+      toast.info('Simulation started. Check Live Tracking!');
+      loadShifts();
+    } catch (error) {
+      toast.error('Failed to start simulation');
+    }
+  };
+
   const handleStatusUpdate = async (shiftId, newStatus) => {
     try {
       await shiftService.updateStatus(shiftId, newStatus);
@@ -46,7 +57,7 @@ const ShiftManagement = () => {
           <FaArrowLeft /> Back
         </button>
         <h1>Shift Management</h1>
-        <button className="btn btn-primary">
+        <button className="btn btn-primary" onClick={() => navigate('/admin/shifts/new')}>
           <FaPlus /> Schedule Shift
         </button>
       </div>
@@ -89,22 +100,30 @@ const ShiftManagement = () => {
                   <td><span className="badge badge-info">{shift.shift_type}</span></td>
                   <td>{shift.start_time} - {shift.end_time}</td>
                   <td>
-                    <span className={`badge badge-${
-                      shift.status === 'active' ? 'success' :
+                    <span className={`badge badge-${shift.status === 'active' ? 'success' :
                       shift.status === 'completed' ? 'info' :
-                      shift.status === 'cancelled' ? 'danger' : 'warning'
-                    }`}>
+                        shift.status === 'cancelled' ? 'danger' : 'warning'
+                      }`}>
                       {shift.status}
                     </span>
                   </td>
                   <td>
                     {shift.status === 'scheduled' && (
-                      <button
-                        className="btn btn-sm btn-success"
-                        onClick={() => handleStatusUpdate(shift.id, 'active')}
-                      >
-                        Start
-                      </button>
+                      <>
+                        <button
+                          className="btn btn-sm btn-success"
+                          onClick={() => handleStatusUpdate(shift.id, 'active')}
+                          style={{ marginRight: '5px' }}
+                        >
+                          Start
+                        </button>
+                        <button
+                          className="btn btn-sm btn-info"
+                          onClick={() => handleSimulate(shift.id)}
+                        >
+                          Simulate
+                        </button>
+                      </>
                     )}
                     {shift.status === 'active' && (
                       <button

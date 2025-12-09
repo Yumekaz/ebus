@@ -15,7 +15,8 @@ const StudentManagement = () => {
     email: '',
     phone: '',
     department: '',
-    year: ''
+    year: '',
+    password: ''
   });
 
   const navigate = useNavigate();
@@ -42,7 +43,8 @@ const StudentManagement = () => {
       email: '',
       phone: '',
       department: '',
-      year: ''
+      year: '',
+      password: ''
     });
     setEditingStudent(null);
   };
@@ -215,6 +217,18 @@ const StudentManagement = () => {
                   max="10"
                 />
               </div>
+              {!editingStudent && (
+                <div className="form-group">
+                  <label>Password (default: student123)</label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Leave blank for default password"
+                  />
+                </div>
+              )}
               <div className="form-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
                   Cancel

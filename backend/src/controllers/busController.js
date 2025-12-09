@@ -24,10 +24,10 @@ const getAllBuses = async (req, res) => {
         }
 
         query += ` ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}`;
-const [buses, countResult] = await Promise.all([
-    busDb.query(query, params),
-    busDb.query(countQuery, params)
-]);
+        const [[buses], [countResult]] = await Promise.all([
+            busDb.query(query, params),
+            busDb.query(countQuery, params)
+        ]);
 
 
         res.json(formatResponse(true, 'Buses retrieved successfully', {
@@ -48,7 +48,7 @@ const [buses, countResult] = await Promise.all([
 const getBusById = async (req, res) => {
     try {
         const { id } = req.params;
-        const results = await busDb.query('SELECT * FROM buses WHERE id = ?', [id]);
+        const [results] = await busDb.query('SELECT * FROM buses WHERE id = ?', [id]);
         if (results.length === 0) return res.status(404).json(formatResponse(false, 'Bus not found'));
         res.json(formatResponse(true, 'Bus retrieved', results[0]));
     } catch (error) {
@@ -60,7 +60,7 @@ const getBusById = async (req, res) => {
 const createBus = async (req, res) => {
     try {
         const { bus_number, registration_number, capacity, bus_type, model, year, gps_device_id } = req.body;
-        const result = await busDb.query(
+        const [result] = await busDb.query(
             `INSERT INTO buses (bus_number, registration_number, capacity, bus_type, model, year, gps_device_id)
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [bus_number, registration_number, capacity, bus_type || 'standard', model, year, gps_device_id]
@@ -105,7 +105,7 @@ const deleteBus = async (req, res) => {
 const getBusLocation = async (req, res) => {
     try {
         const { id } = req.params;
-        const results = await busDb.query(
+        const [results] = await busDb.query(
             `SELECT gl.* FROM gps_logs gl WHERE gl.bus_id = ? ORDER BY gl.timestamp DESC LIMIT 1`,
             [id]
         );

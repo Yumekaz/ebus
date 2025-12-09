@@ -2,25 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { dashboardService } from '../services/dashboardService';
-import { FaBus, FaMapMarkedAlt, FaClock, FaSignOutAlt } from 'react-icons/fa';
+import api from '../services/api';
+import { FaBus, FaMapMarkedAlt, FaClock, FaSignOutAlt, FaChair } from 'react-icons/fa';
 import '../styles/Dashboard.css';
 
 const StudentDashboard = () => {
   const [stats, setStats] = useState(null);
+  const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadStats();
+    loadData();
   }, []);
 
-  const loadStats = async () => {
+  const loadData = async () => {
     try {
-      const response = await dashboardService.getStats();
-      setStats(response.data.data);
+      const [statsRes, bookingsRes] = await Promise.all([
+        dashboardService.getStats(),
+        api.get('/bookings/my')
+      ]);
+      setStats(statsRes.data.data);
+      setBookings(bookingsRes.data.data || []);
     } catch (error) {
-      console.error('Error loading stats:', error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
@@ -30,6 +36,10 @@ const StudentDashboard = () => {
     logout();
     navigate('/login');
   };
+
+  const upcomingBooking = bookings.find(b =>
+    new Date(b.shift_date) >= new Date(new Date().toDateString())
+  );
 
   if (loading) {
     return <div className="loading">Loading...</div>;
@@ -52,7 +62,7 @@ const StudentDashboard = () => {
       <div className="container">
         <div className="page-header">
           <h1>Student Dashboard</h1>
-          <p>Track your bus in real-time</p>
+          <p>Track your bus and manage your seat bookings</p>
         </div>
 
         <div className="stats-grid">
@@ -68,16 +78,23 @@ const StudentDashboard = () => {
 
           <div className="stat-card">
             <div className="stat-icon">
-              <FaClock />
+              <FaChair />
             </div>
             <div className="stat-content">
-              <h3>On Time</h3>
-              <p>Bus Status</p>
+              <h3>{bookings.length}</h3>
+              <p>My Bookings</p>
             </div>
           </div>
         </div>
 
         <div className="dashboard-actions">
+          <div className="action-card" onClick={() => navigate('/student/booking')}>
+            <FaChair size={48} />
+            <h3>Book a Seat</h3>
+            <p>Reserve your seat on an upcoming bus</p>
+            <button className="btn btn-primary">Book Now</button>
+          </div>
+
           <div className="action-card" onClick={() => navigate('/tracking')}>
             <FaMapMarkedAlt size={48} />
             <h3>Live Bus Tracking</h3>
@@ -88,24 +105,39 @@ const StudentDashboard = () => {
 
         <div className="card">
           <h3>Your Bus Information</h3>
-          <div className="info-grid">
-            <div className="info-item">
-              <label>Route:</label>
-              <span>Campus - Main Gate</span>
+          {upcomingBooking ? (
+            <div className="info-grid">
+              <div className="info-item">
+                <label>Route:</label>
+                <span>{upcomingBooking.route_name}</span>
+              </div>
+              <div className="info-item">
+                <label>Bus Number:</label>
+                <span>{upcomingBooking.bus_number}</span>
+              </div>
+              <div className="info-item">
+                <label>Date:</label>
+                <span>{upcomingBooking.shift_date}</span>
+              </div>
+              <div className="info-item">
+                <label>Time:</label>
+                <span>{upcomingBooking.start_time} - {upcomingBooking.end_time}</span>
+              </div>
+              <div className="info-item">
+                <label>Seat Number:</label>
+                <span style={{ fontWeight: 'bold', color: '#2196f3' }}>
+                  Seat {upcomingBooking.seat_number}
+                </span>
+              </div>
             </div>
-            <div className="info-item">
-              <label>Bus Number:</label>
-              <span>BUS-001</span>
+          ) : (
+            <div className="no-data">
+              <p>No upcoming bookings. Book a seat to see your bus information!</p>
+              <button className="btn btn-primary" onClick={() => navigate('/student/booking')}>
+                Book a Seat
+              </button>
             </div>
-            <div className="info-item">
-              <label>Shift Time:</label>
-              <span>8:00 AM - 9:00 AM</span>
-            </div>
-            <div className="info-item">
-              <label>Seat Number:</label>
-              <span>A-12</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

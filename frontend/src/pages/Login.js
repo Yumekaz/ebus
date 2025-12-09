@@ -101,7 +101,7 @@ const Login = () => {
               className="btn btn-outline-secondary btn-sm"
               onClick={() => {
                 setEmail('aarav.sharma@example.com');
-                setPassword('anypassword');
+                setPassword('student123');
                 setUserType('student');
               }}
             >
